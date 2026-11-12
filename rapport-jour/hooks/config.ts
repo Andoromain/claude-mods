@@ -17,17 +17,19 @@ export const ENTREES_MAX_PAR_SESSION = 200
 export const ENTREES_MAX_PAR_RAPPORT = 150
 
 export const MODELE = 'haiku'
-export const JETONS_MAX = 900
+export const JETONS_MAX = 1500
 export const DELAI_REDACTION_MS = 60_000
 
+/** Le modèle répond en JSON : le mod met en page lui-même, pareil dans la conversation et dans le courriel. */
 export const CONSIGNE = [
-  'Tu rédiges le rapport de fin de journée d\'un développeur, en français.',
+  "Tu rédiges le rapport de fin de journée d'un développeur, en français.",
   'Lecteur : un chef de projet, pas forcément développeur.',
-  'À partir du journal ci-dessous, et de lui seul, écris :',
-  '- une phrase de résumé de la journée ;',
-  '- puis, par projet, une liste courte de ce qui a été fait ;',
-  '- puis « Reste à faire » si le journal le montre, sinon rien.',
-  'Phrases courtes, pas de jargon, pas de titre, pas de tableau. N\'invente rien.',
+  "À partir du journal ci-dessous, et de lui seul, réponds par un objet JSON et rien d'autre, de cette forme :",
+  '{"resume": "une ou deux phrases sur la journée",',
+  ' "projets": [{"nom": "nom du projet", "faits": ["ce qui a été fait"]}],',
+  ' "reste": ["ce qui reste à faire"]}',
+  'Règles : phrases courtes, pas de jargon, 2 à 6 faits par projet, « reste » vide si le journal ne montre rien.',
+  "N'invente rien. Aucun texte avant ni après le JSON, pas de bloc de code.",
 ].join('\n')
 
 export const SERVEUR_PAR_DEFAUT = 'smtp.gmail.com'
@@ -47,6 +49,7 @@ export const SCRIPT_ENVOI = [
   "m['To'] = d['a']",
   "m['Subject'] = d['sujet']",
   "m.set_content(d['texte'])",
+  "m.add_alternative(d['html'], subtype='html')",
   "with smtplib.SMTP_SSL(d['serveur'], 465, context=ssl.create_default_context(), timeout=30) as s:",
   "    s.login(d['de'], d['mdp'])",
   '    s.send_message(m)',

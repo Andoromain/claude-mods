@@ -15,10 +15,10 @@ import {
   estDu,
   heureDe,
   jourDe,
-  jourLisible,
   joursAEnvoyer,
   lireCourrier,
   lireHeure,
+  texteRapport,
   titreRapport,
   type Courrier,
 } from './regles'
@@ -71,11 +71,11 @@ async function verifier($: EngineInterface, reglages: Reglages): Promise<void> {
 /** `/rapport` : le rapport du jour, ici ; avec « mail », envoyé aussi par e-mail. */
 async function rapportDemande($: EngineInterface, reglages: Reglages, args: string): Promise<string> {
   const jour = jourDe(await $.clock.now())
-  const texte = await rediger($, jour)
-  const entete = `**${titreRapport(jour)}**\n\n${texte}`
+  const redige = await rediger($, jour)
+  const entete = `**${titreRapport(jour)}**\n\n${texteRapport(redige.rapport)}`
   if (!args.toLowerCase().includes(MOT_ENVOI)) return entete
   if (reglages.courrier === undefined) return `${entete}\n\n${COURRIER_MANQUANT}`
-  const echec = await envoyerMail($, reglages.courrier, jour, texte)
+  const echec = await envoyerMail($, reglages.courrier, jour, redige)
 
   return `${entete}\n\n${echec === undefined ? `Envoyé par e-mail à ${reglages.courrier.a}.` : `Non envoyé : ${echec}`}`
 }

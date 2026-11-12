@@ -120,6 +120,94 @@ export const consigneRapport = (jour: string, entrees: readonly Entree[]): strin
 
 export const titreRapport = (jour: string): string => `Rapport du ${jourLisible(jour)}`
 
-/** Ce que le script d'envoi lit sur son entrée standard. */
-export const messageMail = (courrier: Courrier, jour: string, texte: string): string =>
-  JSON.stringify({ ...courrier, sujet: titreRapport(jour), texte })
+export type Projet = { nom: string; faits: string[] }
+export type Rapport = { resume: string; projets: Projet[]; reste: string[] }
+/** Les chiffres clés de la journée, tirés du journal. */
+export type Resume = { demandes: number; projets: number; plage: string }
+
+const textes = (valeur: unknown): string[] =>
+  Array.isArray(valeur)
+    ? valeur
+        .filter((un): un is string => typeof un === 'string' && un.trim() !== '')
+        .map(un => un.trim())
+    : []
+
+const lireProjet = (valeur: unknown): Projet | undefined => {
+  if (typeof valeur !== 'object' || valeur === null) return undefined
+  const { nom, faits } = valeur as Record<string, unknown>
+  const lus = textes(faits)
+
+  return typeof nom === 'string' && nom.trim() !== '' && lus.length > 0
+    ? { nom: nom.trim(), faits: lus }
+    : undefined
+}
+
+/** Le rapport sans rédaction : les demandes rangées par projet, quand le modèle n'a pas répondu comme attendu. */
+export const rapportDepuisJournal = (entrees: readonly Entree[]): Rapport => {
+  const triees = trierEntrees(entrees)
+  const noms = [...new Set(triees.map(entree => entree.depot))]
+
+  return {
+    resume:
+      triees.length === 0
+        ? 'Rien de noté ce jour-là.'
+        : 'Rapport non rédigé : voici les demandes de la journée.',
+    projets: noms.map(nom => ({
+      nom,
+      faits: triees
+        .filter(entree => entree.depot === nom)
+        .map(entree => `${entree.heure} — ${entree.demande}`),
+    })),
+    reste: [],
+  }
+}
+
+/** Lit la réponse du modèle ; undefined quand ce n'est pas le JSON demandé. */
+export const lireRapport = (reponse: string): Rapport | undefined => {
+  const debut = reponse.indexOf('{')
+  const fin = reponse.lastIndexOf('}')
+  if (debut < 0 || fin <= debut) return undefined
+  try {
+    const lu: unknown = JSON.parse(reponse.slice(debut, fin + 1))
+    if (typeof lu !== 'object' || lu === null) return undefined
+    const { resume, projets, reste } = lu as Record<string, unknown>
+    if (typeof resume !== 'string' || resume.trim() === '') return undefined
+
+    return {
+      resume: resume.trim(),
+      projets: (Array.isArray(projets) ? projets : [])
+        .map(lireProjet)
+        .filter((projet): projet is Projet => projet !== undefined),
+      reste: textes(reste),
+    }
+  } catch {
+    // Réponse coupée ou mal formée : le rapport sera bâti depuis le journal.
+    return undefined
+  }
+}
+
+export const resumeJournal = (entrees: readonly Entree[]): Resume => {
+  const triees = trierEntrees(entrees)
+  const premiere = triees[0]?.heure
+  const derniere = triees[triees.length - 1]?.heure
+
+  return {
+    demandes: triees.length,
+    projets: new Set(triees.map(entree => entree.depot)).size,
+    plage: premiere === undefined || derniere === undefined ? '—' : `${premiere} – ${derniere}`,
+  }
+}
+
+const puces = (points: readonly string[]): string => points.map(point => `- ${point}`).join('\n')
+
+/** Le rapport en texte : pour la conversation, et pour une messagerie qui n'affiche pas le HTML. */
+export const texteRapport = (rapport: Rapport): string =>
+  [
+    rapport.resume,
+    ...rapport.projets.map(projet => `**${projet.nom}**\n${puces(projet.faits)}`),
+    ...(rapport.reste.length === 0 ? [] : [`**Reste à faire**\n${puces(rapport.reste)}`]),
+  ].join('\n\n')
+
+/** Ce que le script d'envoi lit sur son entrée standard : le texte seul et sa version mise en page. */
+export const messageMail = (courrier: Courrier, jour: string, texte: string, html: string): string =>
+  JSON.stringify({ ...courrier, sujet: titreRapport(jour), texte: texte.replace(/\*\*/g, ''), html })
