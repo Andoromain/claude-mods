@@ -89,9 +89,10 @@ export async function lireModule(
   try {
     if (!(await estSur($, chemin))) return { ...vide, erreur: NON_LU }
     const { exitCode, stdout, stderr } = await $.process.run(
-      // Le dossier git est nommé : git ne cherche pas ailleurs un dépôt que personne n'a vérifié.
-      ['git', `--git-dir=${chemin}/.git`, `--work-tree=${chemin}`, ...GIT_SANS_EXECUTION, 'status', ...OPTIONS_STATUT],
-      { cwd: chemin, timeoutMs: DELAI_GIT_MS },
+      ['git', ...GIT_SANS_EXECUTION, 'status', ...OPTIONS_STATUT],
+      // git cherche le dépôt lui-même, ce qui garde son contrôle du propriétaire (safe.directory),
+      // mais sans remonter au-dessus du dossier : jamais un dépôt parent que personne n'a vérifié.
+      { cwd: chemin, timeoutMs: DELAI_GIT_MS, env: { GIT_CEILING_DIRECTORIES: dossierParent(chemin) } },
     )
     if (exitCode !== 0) return { ...vide, erreur: stderr.trim().slice(0, 80) || `git a répondu ${exitCode}` }
     const statut = lireStatut(stdout)
