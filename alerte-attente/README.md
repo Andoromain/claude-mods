@@ -35,6 +35,14 @@ Chaque personne utilise son propre sujet. Qui connaît un sujet reçoit ses aler
 
 Le sujet accepte les lettres, les chiffres, le tiret et le souligné, 64 caractères au plus.
 
+## Quand la notification du poste s'affiche
+
+- Seulement si tu travailles dans une autre fenêtre. Si la fenêtre active est celle de ta session Claude Code (VS Code ou terminal), rien ne s'affiche : tu vois déjà la question.
+- Juste après l'affichage de la question, pas avant. Une réponse donnée tout de suite n'affiche rien.
+- Si tu quittes la fenêtre plus tard, pendant que la question attend toujours, la notification s'affiche à ce moment-là (vérifié toutes les 3 secondes), une seule fois.
+- La fenêtre active se lit sous Linux X11 (`xprop`) et macOS. Sous Wayland elle ne se lit pas : la notification s'affiche toujours.
+- L'alerte sur le téléphone après 2 minutes ne change pas : elle part dans tous les cas.
+
 ## Vérifier
 
 Tape `/alerte` dans Claude Code : une notification s'affiche sur le poste et ton téléphone sonne en quelques secondes. La commande dit ce qui est parti.

@@ -21,3 +21,12 @@ export const MOTIFS = {
 } as const
 
 export type Motif = keyof typeof MOTIFS
+
+/**
+ * Attente avant la notification du poste : le temps que la question soit affichée à l'écran.
+ * Une réponse donnée dans ce délai n'affiche rien.
+ */
+export const DELAI_AFFICHAGE_MS = 1500
+
+/** Tant qu'une question attend et que la personne est sur Claude Code, on regarde de nouveau à ce rythme si elle est partie ailleurs. */
+export const PERIODE_SURVEILLANCE_MS = 3000
