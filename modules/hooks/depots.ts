@@ -1,7 +1,7 @@
 import type { EngineInterface } from 'claude-code'
 
 import type { Module, PullRequest } from '../types'
-import { DELAI_GH_MS, DELAI_GIT_MS } from './config'
+import { DELAI_GH_MS, DELAI_GIT_MS, GIT_SANS_EXECUTION } from './config'
 import { dossierParent, estCache, estParDefaut, lireStatut, nomDossier } from './regles'
 
 async function estDepot($: EngineInterface, chemin: string): Promise<boolean> {
@@ -61,7 +61,7 @@ export async function lireModule(
   const vide = { nom: nomDossier(chemin), chemin, branche: '?', modifs: 0, avance: 0, retard: 0, pr: null }
   try {
     const { exitCode, stdout, stderr } = await $.process.run(
-      ['git', 'status', '--porcelain=v2', '--branch'],
+      ['git', ...GIT_SANS_EXECUTION, 'status', '--porcelain=v2', '--branch'],
       { cwd: chemin, timeoutMs: DELAI_GIT_MS },
     )
     if (exitCode !== 0) return { ...vide, erreur: stderr.trim().slice(0, 80) || `git a répondu ${exitCode}` }

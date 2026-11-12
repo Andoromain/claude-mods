@@ -16,3 +16,14 @@ export const LIBELLES = {
   enCours: 'En cours',
   auRepos: 'Au repos',
 } as const
+
+/**
+ * Le mod lance git dans des dépôts que personne n'a choisis un par un : la configuration
+ * d'un dépôt ne doit rien pouvoir faire exécuter (moniteur de fichiers, hooks).
+ */
+export const GIT_SANS_EXECUTION: readonly string[] = [
+  '-c',
+  'core.fsmonitor=false',
+  '-c',
+  'core.hooksPath=/dev/null',
+]
