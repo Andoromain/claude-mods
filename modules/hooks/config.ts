@@ -46,7 +46,6 @@ export const SECTIONS_SURES: readonly string[] = [
   'gc',
   'lfs',
   'submodule',
-  'extensions',
   'maintenance',
   'advice',
   'color',
@@ -78,3 +77,12 @@ export const NON_LU = 'non lu : la configuration git du dépôt peut lancer un p
 export const CLES_BOOLEENNES: readonly string[] = ['fsmonitor']
 
 export const VALEURS_BOOLEENNES: readonly string[] = ['true', 'false', 'yes', 'no', 'on', 'off', '1', '0', '']
+
+/** Options de `git status` : ne jamais descendre dans un sous-module, dont la configuration n'est pas vérifiée. */
+export const OPTIONS_STATUT: readonly string[] = ['--porcelain=v2', '--branch', '--ignore-submodules=all']
+
+/**
+ * Fichiers et dossiers de `.git` qui font lire à git une autre configuration que `.git/config`
+ * (arbres de travail liés, configuration par arbre) : leur présence suffit à ne pas lancer git.
+ */
+export const CONFIGS_CACHEES: readonly string[] = ['commondir', 'config.worktree', 'worktrees']

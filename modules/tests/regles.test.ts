@@ -107,4 +107,9 @@ test('une configuration qui peut lancer un programme est refusée', async () => 
   expect(configSure('[include]\n\tpath = /tmp/autre')).toBe(false)
   expect(configSure('[includeIf "gitdir:/x"]\n\tpath = /tmp/autre')).toBe(false)
   expect(configSure('[alias]\n\tstatus = !/tmp/x.sh')).toBe(false)
+  // Une clé collée derrière un en-tête, que git lit : la ligne entière est refusée.
+  expect(configSure('[core] fsmonitor = /tmp/x.sh')).toBe(false)
+  expect(configSure('[core]sshCommand=/tmp/x.sh')).toBe(false)
+  expect(configSure('[extensions]\n\tworktreeConfig = true')).toBe(false)
+  expect(configSure('[core.x]\n\ta = b')).toBe(false)
 })

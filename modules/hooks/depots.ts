@@ -1,7 +1,14 @@
 import type { EngineInterface } from 'claude-code'
 
 import type { Module, PullRequest } from '../types'
-import { DELAI_GH_MS, DELAI_GIT_MS, GIT_SANS_EXECUTION, NON_LU } from './config'
+import {
+  CONFIGS_CACHEES,
+  DELAI_GH_MS,
+  DELAI_GIT_MS,
+  GIT_SANS_EXECUTION,
+  NON_LU,
+  OPTIONS_STATUT,
+} from './config'
 import { configSure, dossierParent, estCache, estParDefaut, lireStatut, nomDossier } from './regles'
 
 async function estDepot($: EngineInterface, chemin: string): Promise<boolean> {
@@ -55,6 +62,11 @@ async function lirePr($: EngineInterface, chemin: string): Promise<PullRequest |
 /** Faux quand la configuration du dépôt est illisible (arbre de travail lié) ou peut lancer un programme. */
 async function estSur($: EngineInterface, chemin: string): Promise<boolean> {
   try {
+    const cachees = await Promise.all(
+      CONFIGS_CACHEES.map(nom => $.fs.exists(`${chemin}/.git/${nom}`)),
+    )
+    if (cachees.includes(true)) return false
+
     return configSure(await $.fs.read(`${chemin}/.git/config`))
   } catch {
     // Pas de configuration lisible : dans le doute, git n'est pas lancé.
@@ -72,7 +84,7 @@ export async function lireModule(
   try {
     if (!(await estSur($, chemin))) return { ...vide, erreur: NON_LU }
     const { exitCode, stdout, stderr } = await $.process.run(
-      ['git', ...GIT_SANS_EXECUTION, 'status', '--porcelain=v2', '--branch'],
+      ['git', ...GIT_SANS_EXECUTION, 'status', ...OPTIONS_STATUT],
       { cwd: chemin, timeoutMs: DELAI_GIT_MS },
     )
     if (exitCode !== 0) return { ...vide, erreur: stderr.trim().slice(0, 80) || `git a répondu ${exitCode}` }

@@ -46,7 +46,7 @@ Deux réglages, dans `/config` :
 ## À savoir
 
 - Rien n'est lu avant ton premier `/modules`. Ensuite seulement, le panneau se relit après les commandes git.
-- Sécurité : avant de lancer git dans un dépôt, le mod lit son `.git/config`. S'il contient une section ou une clé qui peut désigner un programme (`filter`, `diff`, `include`, `alias`, `core.fsmonitor`, `core.sshCommand`…), le dépôt est affiché « non lu » et git n'y est pas lancé. Un arbre de travail lié (`git worktree`) est aussi affiché « non lu ».
+- Sécurité : avant de lancer git dans un dépôt, le mod lit son `.git/config`. S'il contient une section ou une clé qui peut désigner un programme (`filter`, `diff`, `include`, `alias`, `core.fsmonitor`, `core.sshCommand`…), le dépôt est affiché « non lu » et git n'y est pas lancé. Un dépôt qui a des arbres de travail liés (`git worktree`) ou une configuration par arbre est aussi affiché « non lu ». Les sous-modules ne sont pas parcourus.
 - Les pull requests sont lues avec `gh`, qui doit être installé et connecté. Sans lui, la colonne reste vide.
 - Lire les pull requests fait un appel à GitHub par dépôt sur une branche de travail : quelques secondes avec beaucoup de dépôts.
 - Les branches de repos sont `main` et `master` ; la liste se change dans `hooks/config.ts`.

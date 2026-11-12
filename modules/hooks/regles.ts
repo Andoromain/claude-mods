@@ -110,8 +110,13 @@ export const configSure = (config: string): boolean =>
     .map(ligne => ligne.trim().toLowerCase())
     .filter(ligne => ligne !== '' && !ligne.startsWith('#') && !ligne.startsWith(';'))
     .every(ligne => {
-      const section = /^\[\s*([a-z0-9.-]+)/.exec(ligne)
-      if (section !== null) return SECTIONS_SURES.includes(section[1] ?? '')
+      // Une ligne qui commence par « [ » doit être un en-tête entier et rien d'autre :
+      // git accepte une clé à la suite du « ] » sur la même ligne.
+      if (ligne.startsWith('[')) {
+        const section = /^\[\s*([a-z0-9-]+)(\s+"[^"\\]*")?\s*\]$/.exec(ligne)
+
+        return section !== null && SECTIONS_SURES.includes(section[1] ?? '')
+      }
       const cle = /^([a-z0-9.-]+)\s*(?:=\s*(.*))?$/.exec(ligne)
       if (cle === null || CLES_REFUSEES.includes(cle[1] ?? '')) return false
 
