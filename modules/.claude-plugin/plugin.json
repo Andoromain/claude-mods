@@ -1,6 +1,6 @@
 {
   "name": "modules",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Panneau qui montre l'état git de tous les dépôts rangés à côté du projet : branche, fichiers modifiés, avance et retard, pull request.",
   "license": "MIT",
   "author": { "name": "Andoromain" },

@@ -1,7 +1,7 @@
 import { expect, test } from 'claude-code/testing'
 
 import type { Module } from '../types'
-import { categorie, configSure, estCache, garderPr, lireListe, lireStatut, tableauTexte, trier } from '../hooks/regles'
+import { categorie, configSure, estCache, teteValide, garderPr, lireListe, lireStatut, tableauTexte, trier } from '../hooks/regles'
 
 const module = (champs: Partial<Module>): Module => ({
   nom: 'demo',
@@ -112,4 +112,12 @@ test('une configuration qui peut lancer un programme est refusée', async () => 
   expect(configSure('[core]sshCommand=/tmp/x.sh')).toBe(false)
   expect(configSure('[extensions]\n\tworktreeConfig = true')).toBe(false)
   expect(configSure('[core.x]\n\ta = b')).toBe(false)
+})
+
+test("le HEAD d'un vrai dépôt est une branche ou un commit", async () => {
+  expect(teteValide('ref: refs/heads/main\n')).toBe(true)
+  expect(teteValide(`${'a'.repeat(40)}\n`)).toBe(true)
+  expect(teteValide('')).toBe(false)
+  expect(teteValide('ref: ailleurs\n')).toBe(false)
+  expect(teteValide('ref: refs/heads/main\nautre ligne')).toBe(false)
 })

@@ -122,3 +122,7 @@ export const configSure = (config: string): boolean =>
 
       return !CLES_BOOLEENNES.includes(cle[1] ?? '') || VALEURS_BOOLEENNES.includes(cle[2] ?? '')
     })
+
+/** Vrai quand le contenu de `.git/HEAD` est celui d'un vrai dépôt : une branche ou un commit. */
+export const teteValide = (tete: string): boolean =>
+  /^(ref: refs\/[^\s]+|[0-9a-f]{40}(?:[0-9a-f]{24})?)\s*$/.test(tete)

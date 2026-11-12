@@ -10,7 +10,7 @@ import {
   NON_LU,
   OPTIONS_STATUT,
 } from './config'
-import { configSure, dossierParent, estCache, estParDefaut, lireStatut, nomDossier } from './regles'
+import { configSure, teteValide, dossierParent, estCache, estParDefaut, lireStatut, nomDossier } from './regles'
 
 async function estDepot($: EngineInterface, chemin: string): Promise<boolean> {
   try {
@@ -71,11 +71,22 @@ async function estSur($: EngineInterface, chemin: string): Promise<boolean> {
       CONFIGS_CACHEES.map(nom => $.fs.exists(`${chemin}/.git/${nom}`)),
     )
     if (cachees.includes(true)) return false
+    // Un HEAD invalide ferait dire à git « pas un dépôt » et chercher ailleurs.
+    if (!teteValide(await $.fs.read(`${chemin}/.git/HEAD`))) return false
 
     return configSure(await $.fs.read(`${chemin}/.git/config`))
   } catch {
     // Pas de configuration lisible : dans le doute, git n'est pas lancé.
     return false
+  }
+}
+
+/** Le chemin réel du dossier, liens symboliques résolus ; undefined s'il ne peut pas être établi. */
+async function cheminReel($: EngineInterface, chemin: string): Promise<string | undefined> {
+  try {
+    return (await $.fs.stat(chemin, { resolve: true })).realPath
+  } catch {
+    return undefined
   }
 }
 
@@ -87,12 +98,18 @@ export async function lireModule(
 ): Promise<Module> {
   const vide = { nom: nomDossier(chemin), chemin, branche: '?', modifs: 0, avance: 0, retard: 0, pr: null }
   try {
-    if (!(await estSur($, chemin))) return { ...vide, erreur: NON_LU }
+    // Tout se fait sur le chemin réel : la vérification et git regardent le même dossier.
+    const reel = await cheminReel($, chemin)
+    if (reel === undefined || !(await estSur($, reel))) return { ...vide, erreur: NON_LU }
     const { exitCode, stdout, stderr } = await $.process.run(
       ['git', ...GIT_SANS_EXECUTION, 'status', ...OPTIONS_STATUT],
       // git cherche le dépôt lui-même, ce qui garde son contrôle du propriétaire (safe.directory),
-      // mais sans remonter au-dessus du dossier : jamais un dépôt parent que personne n'a vérifié.
-      { cwd: chemin, timeoutMs: DELAI_GIT_MS, env: { GIT_CEILING_DIRECTORIES: dossierParent(chemin) } },
+      // mais sans remonter au-dessus du dossier ni changer de disque : jamais un dépôt non vérifié.
+      {
+        cwd: reel,
+        timeoutMs: DELAI_GIT_MS,
+        env: { GIT_CEILING_DIRECTORIES: dossierParent(reel), GIT_DISCOVERY_ACROSS_FILESYSTEM: '0' },
+      },
     )
     if (exitCode !== 0) return { ...vide, erreur: stderr.trim().slice(0, 80) || `git a répondu ${exitCode}` }
     const statut = lireStatut(stdout)
