@@ -1,0 +1,42 @@
+{
+  "name": "rapport-jour",
+  "version": "0.2.0",
+  "description": "Rapport de ce qui a été fait dans Claude Code : envoyé par e-mail chaque jour à l'heure choisie, ou affiché à la demande.",
+  "license": "MIT",
+  "author": {
+    "name": "Andoromain"
+  },
+  "userConfig": {
+    "heure": {
+      "type": "string",
+      "title": "Heure d'envoi",
+      "description": "Heure d'envoi du rapport du jour, au format HH:MM sur 24 heures (exemple : 17:30).",
+      "default": "17:30"
+    },
+    "email_expediteur": {
+      "type": "string",
+      "title": "Adresse d'envoi",
+      "description": "L'adresse e-mail qui envoie le rapport (exemple : ton adresse Gmail). Vide = aucun envoi, le rapport reste disponible avec /rapport.",
+      "default": ""
+    },
+    "mot_de_passe_application": {
+      "type": "string",
+      "title": "Mot de passe d'application",
+      "description": "Le mot de passe d'application créé pour cette adresse (Gmail : compte Google > Sécurité > Mots de passe des applications). Jamais ton mot de passe habituel.",
+      "sensitive": true,
+      "default": ""
+    },
+    "email_destinataire": {
+      "type": "string",
+      "title": "Destinataire",
+      "description": "L'adresse qui reçoit le rapport. Vide = l'adresse d'envoi.",
+      "default": ""
+    },
+    "serveur_smtp": {
+      "type": "string",
+      "title": "Serveur d'envoi",
+      "description": "Le serveur SMTP de l'adresse d'envoi, connexion chiffrée sur le port 465. Gmail : smtp.gmail.com.",
+      "default": "smtp.gmail.com"
+    }
+  }
+}
