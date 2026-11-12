@@ -1,7 +1,7 @@
 import { expect, test } from 'claude-code/testing'
 
 import type { Module } from '../types'
-import { categorie, estCache, garderPr, lireListe, lireStatut, tableauTexte, trier } from '../hooks/regles'
+import { categorie, configSure, estCache, garderPr, lireListe, lireStatut, tableauTexte, trier } from '../hooks/regles'
 
 const module = (champs: Partial<Module>): Module => ({
   nom: 'demo',
@@ -79,4 +79,32 @@ test('le tableau en texte reprend chaque module', async () => {
 
   expect(texte.includes('| demo | feat/x | 3 |')).toBe(true)
   expect(tableauTexte([])).toBe('Aucun dépôt git trouvé.')
+})
+
+test('une configuration git ordinaire est sûre', async () => {
+  const config = [
+    '[core]',
+    '\trepositoryformatversion = 0',
+    '\tbare = false',
+    '[remote "origin"]',
+    '\turl = git@exemple.test:equipe/demo.git',
+    '\tfetch = +refs/heads/*:refs/remotes/origin/*',
+    '[branch "main"]',
+    '\tremote = origin',
+    '\tmerge = refs/heads/main',
+  ].join('\n')
+
+  expect(configSure(config)).toBe(true)
+  expect(configSure('[core]\n\tfsmonitor = true')).toBe(true)
+  expect(configSure('[merge "outil"]\n\tdriver = outil %A %B')).toBe(true)
+})
+
+test('une configuration qui peut lancer un programme est refusée', async () => {
+  expect(configSure('[core]\n\tfsmonitor = /tmp/x.sh')).toBe(false)
+  expect(configSure('[core]\n\tsshCommand = /tmp/x.sh')).toBe(false)
+  expect(configSure('[filter "x"]\n\tclean = /tmp/x.sh')).toBe(false)
+  expect(configSure('[diff "x"]\n\ttextconv = /tmp/x.sh')).toBe(false)
+  expect(configSure('[include]\n\tpath = /tmp/autre')).toBe(false)
+  expect(configSure('[includeIf "gitdir:/x"]\n\tpath = /tmp/autre')).toBe(false)
+  expect(configSure('[alias]\n\tstatus = !/tmp/x.sh')).toBe(false)
 })

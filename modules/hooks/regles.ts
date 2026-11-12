@@ -1,5 +1,12 @@
 import type { Module } from '../types'
-import { BRANCHES_PAR_DEFAUT, LIBELLES } from './config'
+import {
+  BRANCHES_PAR_DEFAUT,
+  CLES_BOOLEENNES,
+  CLES_REFUSEES,
+  LIBELLES,
+  SECTIONS_SURES,
+  VALEURS_BOOLEENNES,
+} from './config'
 
 export type Statut = { branche: string; modifs: number; avance: number; retard: number }
 
@@ -92,3 +99,21 @@ export const tableauTexte = (modules: readonly Module[]): string =>
             : `| ${module.nom} | ${module.branche} | ${module.modifs || ''} | ${module.avance || ''} | ${module.retard || ''} | ${libellePr(module)} |`,
         ),
       ].join('\n')
+
+/**
+ * Vrai quand le `.git/config` d'un dépôt ne contient que des sections admises et aucune clé
+ * qui désigne un programme : git peut y être lancé sans rien faire exécuter d'autre.
+ */
+export const configSure = (config: string): boolean =>
+  config
+    .split('\n')
+    .map(ligne => ligne.trim().toLowerCase())
+    .filter(ligne => ligne !== '' && !ligne.startsWith('#') && !ligne.startsWith(';'))
+    .every(ligne => {
+      const section = /^\[\s*([a-z0-9.-]+)/.exec(ligne)
+      if (section !== null) return SECTIONS_SURES.includes(section[1] ?? '')
+      const cle = /^([a-z0-9.-]+)\s*(?:=\s*(.*))?$/.exec(ligne)
+      if (cle === null || CLES_REFUSEES.includes(cle[1] ?? '')) return false
+
+      return !CLES_BOOLEENNES.includes(cle[1] ?? '') || VALEURS_BOOLEENNES.includes(cle[2] ?? '')
+    })

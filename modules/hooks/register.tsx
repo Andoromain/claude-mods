@@ -69,7 +69,6 @@ export const register: Register = (on, options) => {
       name: COMMANDE,
       description: "Ouvre le panneau d'état git de tous les modules",
     })
-    void actualiser($, reglages, false)
 
     return next(e)
   })
@@ -88,7 +87,9 @@ export const register: Register = (on, options) => {
   // Une commande git du tour vient de finir : l'état affiché est à relire (sans les PR).
   on('tool.call', { tool: 'Bash' }, async ($, e, next) => {
     const resultat = await next(e)
-    if (COMMANDE_GIT.test(` ${e.command}`)) void actualiser($, reglages, false)
+    // Rien n'est lu tant que la personne n'a pas ouvert le panneau elle-même.
+    const dejaOuvert = (await read($, etat)).majA !== null
+    if (dejaOuvert && COMMANDE_GIT.test(` ${e.command}`)) void actualiser($, reglages, false)
 
     return resultat
   })

@@ -32,7 +32,7 @@ Tape `/modules` : le panneau s'ouvre et lit les dépôts, pull requests comprise
 
 - **Actualiser** (touche `r`) relit tout, pull requests comprises.
 - **Tout afficher** (touche `t`) montre aussi les dépôts au repos.
-- Après chaque commande `git` ou `gh` lancée par Claude, le panneau se relit tout seul, sans interroger GitHub.
+- Une fois le panneau ouvert, il se relit tout seul après chaque commande `git` ou `gh` lancée par Claude, sans interroger GitHub.
 
 ## Quels dépôts sont affichés
 
@@ -45,6 +45,8 @@ Deux réglages, dans `/config` :
 
 ## À savoir
 
+- Rien n'est lu avant ton premier `/modules`. Ensuite seulement, le panneau se relit après les commandes git.
+- Sécurité : avant de lancer git dans un dépôt, le mod lit son `.git/config`. S'il contient une section ou une clé qui peut désigner un programme (`filter`, `diff`, `include`, `alias`, `core.fsmonitor`, `core.sshCommand`…), le dépôt est affiché « non lu » et git n'y est pas lancé. Un arbre de travail lié (`git worktree`) est aussi affiché « non lu ».
 - Les pull requests sont lues avec `gh`, qui doit être installé et connecté. Sans lui, la colonne reste vide.
 - Lire les pull requests fait un appel à GitHub par dépôt sur une branche de travail : quelques secondes avec beaucoup de dépôts.
 - Les branches de repos sont `main` et `master` ; la liste se change dans `hooks/config.ts`.
