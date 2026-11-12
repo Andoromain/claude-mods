@@ -1,0 +1,22 @@
+{
+  "name": "modules",
+  "version": "0.1.0",
+  "description": "Panneau qui montre l'état git de tous les dépôts rangés à côté du projet : branche, fichiers modifiés, avance et retard, pull request.",
+  "license": "MIT",
+  "author": { "name": "Andoromain" },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "dossiers_en_plus": {
+      "type": "string",
+      "title": "Dossiers en plus",
+      "description": "Chemins absolus de dépôts rangés ailleurs, séparés par des virgules. Vide = aucun.",
+      "default": ""
+    },
+    "dossiers_caches": {
+      "type": "string",
+      "title": "Dossiers à cacher",
+      "description": "Noms de dossiers (ou chemins absolus) à ne pas afficher, séparés par des virgules. Vide = aucun.",
+      "default": ""
+    }
+  }
+}

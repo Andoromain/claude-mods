@@ -5,6 +5,7 @@ Mods pour Claude Code. Un dossier par mod, chacun avec son propre README.
 | Mod | Ce qu'il fait |
 | --- | --- |
 | [alerte-attente](alerte-attente/README.md) | Notification système quand Claude attend une réponse, puis alerte sur le téléphone (ntfy) après 2 minutes sans réponse. |
+| [modules](modules/README.md) | Panneau qui montre l'état git de tous les dépôts rangés à côté du projet : branche, fichiers modifiés, avance et retard, pull request. |
 
 ## Installer un mod
 
