@@ -41,6 +41,7 @@ Le sujet accepte les lettres, les chiffres, le tiret et le souligné, 64 caract�
 - Juste après l'affichage de la question, pas avant. Une réponse donnée tout de suite n'affiche rien.
 - Si tu quittes la fenêtre plus tard, pendant que la question attend toujours, la notification s'affiche à ce moment-là (vérifié toutes les 3 secondes), une seule fois.
 - La fenêtre active se lit sous Linux X11 (`xprop`) et macOS. Sous Wayland elle ne se lit pas : la notification s'affiche toujours.
+- Un clic sur la notification ramène la fenêtre de ta session au premier plan (Linux sous X11, avec `python3` et PyGObject, présents sur Ubuntu). Ailleurs, la notification s'affiche sans cet effet.
 - L'alerte sur le téléphone après 2 minutes ne change pas : elle part dans tous les cas.
 
 ## Vérifier

@@ -1,5 +1,7 @@
 import type { EngineInterface } from 'claude-code'
 
+import { SCRIPT_CLIQUABLE } from './notification-cliquable'
+
 const APPLICATION = 'Claude Code'
 const DELAI_COMMANDE_MS = 5000
 
@@ -11,7 +13,13 @@ const DUREE_AFFICHAGE_MS = 10_000
  * gdbus passe en premier : lancé depuis une application snap (VS Code), notify-send passe par
  * le portail, répond 0 et n'affiche rien.
  */
-const commandes = (titre: string, texte: string): readonly (readonly string[])[] => [
+const commandes = (
+  titre: string,
+  texte: string,
+  fenetre: string | undefined,
+): readonly (readonly string[])[] => [
+  // D'abord la notification cliquable, quand la fenêtre où revenir est connue.
+  ...(fenetre === undefined ? [] : [['python3', '-I', '-c', SCRIPT_CLIQUABLE, titre, texte, fenetre]]),
   [
     'gdbus',
     'call',
@@ -55,8 +63,9 @@ export async function notifierSysteme(
   $: EngineInterface,
   titre: string,
   texte: string,
+  fenetre: string | undefined,
 ): Promise<boolean> {
-  for (const argv of commandes(titre, texte)) {
+  for (const argv of commandes(titre, texte, fenetre)) {
     if (await lancer($, argv)) return true
   }
 

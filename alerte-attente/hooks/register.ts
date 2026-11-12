@@ -10,7 +10,7 @@ import {
   SUJET_VALIDE,
   type Motif,
 } from './config'
-import { estSurClaude } from './fenetre'
+import { lirePresence } from './fenetre'
 import { notifierSysteme } from './notification-systeme'
 
 const CLE_TOUR = 'tour'
@@ -56,8 +56,9 @@ const envoyerTelephone = async ($: EngineInterface, motif: Motif): Promise<boole
  * Rien n'est affiché quand la personne a déjà la session sous les yeux, sauf si `forcer` (essai).
  */
 const prevenirPoste = async ($: EngineInterface, motif: Motif, forcer = false): Promise<boolean> => {
-  if (!forcer && (await estSurClaude($))) return false
-  if (await notifierSysteme($, TITRE, MOTIFS[motif])) return true
+  const presence = await lirePresence($)
+  if (!forcer && presence.estSurClaude) return false
+  if (await notifierSysteme($, TITRE, MOTIFS[motif], presence.fenetre)) return true
   try {
     return (await $.ui.notify(MOTIFS[motif], { title: TITRE })).isSent
   } catch {
