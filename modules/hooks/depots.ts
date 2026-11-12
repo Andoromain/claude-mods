@@ -3,6 +3,7 @@ import type { EngineInterface } from 'claude-code'
 import type { Module, PullRequest } from '../types'
 import {
   CONFIGS_CACHEES,
+  CONTENU_GIT,
   DELAI_GH_MS,
   DELAI_GIT_MS,
   GIT_SANS_EXECUTION,
@@ -62,6 +63,10 @@ async function lirePr($: EngineInterface, chemin: string): Promise<PullRequest |
 /** Faux quand la configuration du dépôt est illisible (arbre de travail lié) ou peut lancer un programme. */
 async function estSur($: EngineInterface, chemin: string): Promise<boolean> {
   try {
+    const presents = await Promise.all(
+      CONTENU_GIT.map(nom => $.fs.exists(`${chemin}/.git/${nom}`)),
+    )
+    if (presents.includes(false)) return false
     const cachees = await Promise.all(
       CONFIGS_CACHEES.map(nom => $.fs.exists(`${chemin}/.git/${nom}`)),
     )
@@ -84,7 +89,8 @@ export async function lireModule(
   try {
     if (!(await estSur($, chemin))) return { ...vide, erreur: NON_LU }
     const { exitCode, stdout, stderr } = await $.process.run(
-      ['git', ...GIT_SANS_EXECUTION, 'status', ...OPTIONS_STATUT],
+      // Le dossier git est nommé : git ne cherche pas ailleurs un dépôt que personne n'a vérifié.
+      ['git', `--git-dir=${chemin}/.git`, `--work-tree=${chemin}`, ...GIT_SANS_EXECUTION, 'status', ...OPTIONS_STATUT],
       { cwd: chemin, timeoutMs: DELAI_GIT_MS },
     )
     if (exitCode !== 0) return { ...vide, erreur: stderr.trim().slice(0, 80) || `git a répondu ${exitCode}` }

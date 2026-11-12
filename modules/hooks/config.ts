@@ -27,6 +27,8 @@ export const GIT_SANS_EXECUTION: readonly string[] = [
   'core.fsmonitor=false',
   '-c',
   'core.hooksPath=/dev/null',
+  '-c',
+  'safe.bareRepository=explicit',
 ]
 
 /**
@@ -86,3 +88,6 @@ export const OPTIONS_STATUT: readonly string[] = ['--porcelain=v2', '--branch', 
  * (arbres de travail liés, configuration par arbre) : leur présence suffit à ne pas lancer git.
  */
 export const CONFIGS_CACHEES: readonly string[] = ['commondir', 'config.worktree', 'worktrees']
+
+/** Ce qu'un vrai dossier `.git` contient : sans eux, git irait chercher un autre dépôt, jamais vérifié. */
+export const CONTENU_GIT: readonly string[] = ['HEAD', 'objects', 'refs', 'config']
