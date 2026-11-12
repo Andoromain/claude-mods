@@ -1,0 +1,12 @@
+{
+  "name": "mods-perso",
+  "description": "Mods pour Claude Code : petits ajouts à l'interface et au comportement.",
+  "owner": { "name": "Andoromain" },
+  "plugins": [
+    {
+      "name": "alerte-attente",
+      "source": "./alerte-attente",
+      "description": "Notification système quand Claude attend une réponse, puis alerte sur le téléphone (ntfy) après 2 minutes sans réponse."
+    }
+  ]
+}

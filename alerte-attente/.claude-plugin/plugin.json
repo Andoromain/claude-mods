@@ -1,0 +1,17 @@
+{
+  "name": "alerte-attente",
+  "version": "0.3.0",
+  "description": "Notification système quand Claude attend une réponse, puis alerte sur le téléphone (ntfy) après 2 minutes sans réponse.",
+  "license": "MIT",
+  "author": {
+    "name": "Andoromain"
+  },
+  "userConfig": {
+    "sujet_ntfy": {
+      "type": "string",
+      "title": "Sujet ntfy",
+      "description": "Le sujet (topic) ntfy auquel ton téléphone est abonné. Choisis un nom long et difficile à deviner : qui le connaît reçoit tes alertes. Vide = aucune alerte envoyée.",
+      "default": ""
+    }
+  }
+}
