@@ -1,7 +1,9 @@
 import {
+  COMMANDE_MOD,
   CONSIGNE,
   ENTREES_MAX_PAR_RAPPORT,
   HEURE_PAR_DEFAUT,
+  MOT_ENVOI,
   PREFIXE_ENVOYE,
   PREFIXE_JOURNAL,
   SERVEUR_PAR_DEFAUT,
@@ -91,9 +93,67 @@ export const estEntree = (valeur: unknown): valeur is Entree => {
   return [heure, depot, demande, reponse].every(champ => typeof champ === 'string')
 }
 
-/** Ce que le magasin a rendu, réduit aux entrées bien formées. */
+/**
+ * Balises que Claude Code ajoute autour ou à la place de ce que la personne a écrit (fichier ouvert,
+ * sélection, consignes du navigateur, rappels, fin de tâche de fond…). Liste fermée : une balise de
+ * composant que la personne écrit elle-même (`<bureau-sidebar>`) n'est jamais retirée.
+ */
+const BALISES_AJOUTEES = [
+  'browser_instruction', 'ide_opened_file', 'ide_selection', 'ide_diagnostics', 'system-reminder',
+  'task-notification', 'local-command-caveat', 'local-command-stdout', 'local-command-stderr',
+  'command-name', 'command-message', 'command-args', 'bash-input', 'bash-stdout', 'bash-stderr',
+  'deja-recall', 'user-prompt-submit-hook',
+].join('|')
+const BLOC_FERME = new RegExp(`<(${BALISES_AJOUTEES})\\b[^>]*>[\\s\\S]*?</\\1>`, 'g')
+/** Une balise ouverte et jamais fermée (texte coupé à la longueur gardée) emporte la fin du texte. */
+const BLOC_OUVERT = new RegExp(`<(?:${BALISES_AJOUTEES})\\b[^>]*>[\\s\\S]*$`)
+const COLLE = /<pasted_content\b[^>]*>([\s\S]*?)(?:<\/pasted_content>|$)/g
+
+/** La demande telle que la personne l'a écrite : sans les balises ajoutées, le texte collé gardé. */
+export const nettoyerDemande = (texte: string): string =>
+  texte
+    .replace(BLOC_FERME, ' ')
+    .replace(BLOC_OUVERT, ' ')
+    .replace(COLLE, '$1')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+/**
+ * Ce que le magasin a rendu, réduit aux entrées bien formées dont il reste une demande une fois
+ * nettoyée : les entrées notées avant ce nettoyage sont corrigées à la lecture.
+ */
 export const lireEntrees = (valeur: unknown): Entree[] =>
-  Array.isArray(valeur) ? valeur.filter(estEntree) : []
+  (Array.isArray(valeur) ? valeur.filter(estEntree) : [])
+    .map(entree => ({ ...entree, demande: nettoyerDemande(entree.demande) }))
+    .filter(entree => entree.demande !== '')
+
+/**
+ * L'heure d'envoi lue dans le texte de settings.json, ou undefined. Les réglages changés à la main
+ * n'atteignent le mod qu'au redémarrage : il les relit à chaque vérification.
+ */
+export const heureDesReglages = (texte: string): string | undefined => {
+  try {
+    const configs = (JSON.parse(texte) as { pluginConfigs?: Record<string, { options?: { heure?: unknown } }> })
+      .pluginConfigs
+    const cle = Object.keys(configs ?? {}).find(nom => nom.startsWith(`${COMMANDE_MOD}@`))
+    const heure = cle === undefined ? undefined : configs?.[cle]?.options?.heure
+    if (typeof heure !== 'string') return undefined
+    const lue = lireHeure(heure)
+
+    // lireHeure retombe sur l'heure par défaut quand le texte n'est pas une heure : ce n'est pas un réglage.
+    return lue === HEURE_PAR_DEFAUT && heure.trim() !== HEURE_PAR_DEFAUT ? undefined : lue
+  } catch {
+    // settings.json illisible : on garde l'heure lue au démarrage.
+    return undefined
+  }
+}
+
+/** Les mots passés à /rapport qui ne sont pas le mot d'envoi. */
+export const motsInconnus = (args: string): string[] =>
+  args
+    .split(/\s+/)
+    .map(mot => mot.trim().toLowerCase())
+    .filter(mot => mot !== '' && mot !== MOT_ENVOI)
 
 export const couper = (texte: string, longueur: number): string => {
   const propre = texte.replace(/\s+/g, ' ').trim()
@@ -142,8 +202,11 @@ const lireProjet = (valeur: unknown): Projet | undefined => {
     : undefined
 }
 
-/** Le rapport sans rédaction : les demandes rangées par projet, quand le modèle n'a pas répondu comme attendu. */
-export const rapportDepuisJournal = (entrees: readonly Entree[]): Rapport => {
+/**
+ * Le rapport sans rédaction : les demandes rangées par projet, quand le modèle n'a pas répondu comme
+ * attendu ; `raison` dit pourquoi.
+ */
+export const rapportDepuisJournal = (entrees: readonly Entree[], raison?: string): Rapport => {
   const triees = trierEntrees(entrees)
   const noms = [...new Set(triees.map(entree => entree.depot))]
 
@@ -151,7 +214,7 @@ export const rapportDepuisJournal = (entrees: readonly Entree[]): Rapport => {
     resume:
       triees.length === 0
         ? 'Rien de noté ce jour-là.'
-        : 'Rapport non rédigé : voici les demandes de la journée.',
+        : `Rapport non rédigé${raison === undefined ? '' : ` (${raison})`} : voici les demandes de la journée.`,
     projets: noms.map(nom => ({
       nom,
       faits: triees

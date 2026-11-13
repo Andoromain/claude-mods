@@ -1,4 +1,4 @@
-import type { EngineInterface } from 'claude-code'
+import type { EngineInterface, ModelCompleteResult } from 'claude-code'
 
 import { DELAI_ENVOI_MS, DELAI_REDACTION_MS, JETONS_MAX, MODELE, SCRIPT_ENVOI } from './config'
 import { htmlRapport } from './courriel'
@@ -29,9 +29,23 @@ export async function rediger($: EngineInterface, jour: string): Promise<Redige>
     maxTokens: JETONS_MAX,
     timeoutMs: DELAI_REDACTION_MS,
   })
-  const lu = reponse.isAnswered ? lireRapport(reponse.text) : undefined
+  if (!reponse.isAnswered) return { rapport: rapportDepuisJournal(entrees, raisonSansReponse(reponse)), resume }
+  const lu = lireRapport(reponse.text)
+  if (lu !== undefined) return { rapport: lu, resume }
+  const coupee = reponse.usage.output_tokens >= JETONS_MAX
 
-  return { rapport: lu ?? rapportDepuisJournal(entrees), resume }
+  return {
+    rapport: rapportDepuisJournal(entrees, coupee ? 'réponse du modèle coupée' : 'réponse du modèle illisible'),
+    resume,
+  }
+}
+
+/** Pourquoi le modèle n'a rien rendu, en clair pour le rapport. */
+function raisonSansReponse(reponse: Extract<ModelCompleteResult, { isAnswered: false }>): string {
+  if (reponse.reason === 'api-error') return `erreur du service de rédaction : ${reponse.error} ${reponse.status ?? ''}`.trim()
+  if (reponse.reason === 'empty-reply') return 'réponse vide du modèle'
+
+  return 'rédaction interrompue'
 }
 
 /** Envoie le rapport par e-mail ; renvoie undefined quand c'est parti, sinon la raison de l'échec. */

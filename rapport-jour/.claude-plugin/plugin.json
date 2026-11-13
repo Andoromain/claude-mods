@@ -1,6 +1,6 @@
 {
   "name": "rapport-jour",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Rapport de ce qui a été fait dans Claude Code : envoyé par e-mail chaque jour à l'heure choisie, ou affiché à la demande.",
   "license": "MIT",
   "author": {

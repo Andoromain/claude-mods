@@ -16,8 +16,11 @@ import {
   heureDe,
   jourDe,
   joursAEnvoyer,
+  heureDesReglages,
   lireCourrier,
   lireHeure,
+  motsInconnus,
+  nettoyerDemande,
   texteRapport,
   titreRapport,
   type Courrier,
@@ -42,6 +45,24 @@ async function envoyerJour($: EngineInterface, courrier: Courrier, jour: string)
   return echec
 }
 
+/**
+ * L'heure d'envoi telle qu'elle est dans settings.json maintenant : un réglage changé à la main
+ * n'arrive au mod qu'au redémarrage. Sinon l'heure lue au démarrage.
+ */
+async function heureActuelle($: EngineInterface, auDemarrage: string): Promise<string> {
+  try {
+    const { exitCode, stdout } = await $.process.run(
+      ['sh', '-c', 'cat "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/settings.json"'],
+      { timeoutMs: 5_000 },
+    )
+
+    return (exitCode === 0 ? heureDesReglages(stdout) : undefined) ?? auDemarrage
+  } catch {
+    // Lecture impossible : l'heure du démarrage reste valable.
+    return auDemarrage
+  }
+}
+
 /** Envoie chaque rapport dû : les jours passés jamais envoyés, et le jour même une fois l'heure atteinte. */
 async function verifier($: EngineInterface, reglages: Reglages): Promise<void> {
   const { courrier } = reglages
@@ -49,8 +70,9 @@ async function verifier($: EngineInterface, reglages: Reglages): Promise<void> {
   estEnVerification = true
   try {
     const maintenant = await $.clock.now()
+    const heure = await heureActuelle($, reglages.heure)
     const dus = joursAEnvoyer(await $.store.keys()).filter(jour =>
-      estDu(jour, jourDe(maintenant), heureDe(maintenant), reglages.heure),
+      estDu(jour, jourDe(maintenant), heureDe(maintenant), heure),
     )
     for (const jour of dus) {
       const echec = await envoyerJour($, courrier, jour)
@@ -72,8 +94,13 @@ async function verifier($: EngineInterface, reglages: Reglages): Promise<void> {
 async function rapportDemande($: EngineInterface, reglages: Reglages, args: string): Promise<string> {
   const jour = jourDe(await $.clock.now())
   const redige = await rediger($, jour)
-  const entete = `**${titreRapport(jour)}**\n\n${texteRapport(redige.rapport)}`
-  if (!args.toLowerCase().includes(MOT_ENVOI)) return entete
+  const inconnus = motsInconnus(args)
+  const avertissement =
+    inconnus.length === 0
+      ? ''
+      : `\n\n« ${inconnus.join(' ')} » ignoré : seul « ${MOT_ENVOI} » est compris (/${COMMANDE} ${MOT_ENVOI} pour l'envoyer par e-mail).`
+  const entete = `**${titreRapport(jour)}**\n\n${texteRapport(redige.rapport)}${avertissement}`
+  if (!args.toLowerCase().split(/\s+/).includes(MOT_ENVOI)) return entete
   if (reglages.courrier === undefined) return `${entete}\n\n${COURRIER_MANQUANT}`
   const echec = await envoyerMail($, reglages.courrier, jour, redige)
 
@@ -102,7 +129,8 @@ export const register: Register = (on, options) => {
   }))
 
   on('turn.start', ($, e, next) => {
-    if (e.agentId === undefined) demandes = new Map([...demandes, [e.turnId, e.text]])
+    // Gardée sans les balises ajoutées par Claude Code ; une fin de tâche de fond n'est pas une demande.
+    if (e.agentId === undefined) demandes = new Map([...demandes, [e.turnId, nettoyerDemande(e.text)]])
 
     return next(e)
   })
