@@ -1,4 +1,6 @@
 export const COMMANDE = 'rapport'
+/** Nom du mod : la clé de ses réglages dans settings.json est `<nom>@<catalogue>`. */
+export const COMMANDE_MOD = 'rapport-jour'
 /** Mot à ajouter à la commande pour envoyer aussi le rapport par e-mail. */
 export const MOT_ENVOI = 'mail'
 
@@ -17,8 +19,9 @@ export const ENTREES_MAX_PAR_SESSION = 200
 export const ENTREES_MAX_PAR_RAPPORT = 150
 
 export const MODELE = 'haiku'
-export const JETONS_MAX = 1500
-export const DELAI_REDACTION_MS = 60_000
+/** Assez pour un JSON complet sur une journée chargée : coupé, il est illisible. */
+export const JETONS_MAX = 4000
+export const DELAI_REDACTION_MS = 120_000
 
 /** Le modèle répond en JSON : le mod met en page lui-même, pareil dans la conversation et dans le courriel. */
 export const CONSIGNE = [

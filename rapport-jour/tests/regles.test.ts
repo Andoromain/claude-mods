@@ -3,6 +3,7 @@ import { expect, test } from 'claude-code/testing'
 import {
   couper,
   estDu,
+  heureDesReglages,
   jourDeCle,
   jourLisible,
   joursAEnvoyer,
@@ -11,6 +12,8 @@ import {
   lireHeure,
   lireRapport,
   messageMail,
+  motsInconnus,
+  nettoyerDemande,
   rapportBrut,
   rapportDepuisJournal,
   resumeJournal,
@@ -72,6 +75,44 @@ test('écarte ce qui ne ressemble pas à une entrée', async () => {
   expect(lireEntrees(undefined)).toEqual([])
 })
 
+test('retire les balises ajoutées par Claude Code et garde la vraie demande', async () => {
+  expect(
+    nettoyerDemande('<ide_opened_file>Le fichier X est ouvert.</ide_opened_file> corrige le menu'),
+  ).toBe('corrige le menu')
+  // Une balise coupée par la limite de longueur emporte tout ce qui suit.
+  expect(nettoyerDemande('<browser_instruction># Claude in Chrome browser automation You have…')).toBe('')
+  expect(nettoyerDemande('<task-notification> <task-id>a1</task-id> <status>completed</status>')).toBe('')
+  expect(nettoyerDemande('<system-reminder>rappel</system-reminder>\n<ide_selection>l. 1-16</ide_selection> oui')).toBe('oui')
+  // Le texte collé par la personne reste, sans ses balises.
+  expect(nettoyerDemande('voici : <pasted_content id="x">le log</pasted_content>')).toBe('voici : le log')
+  // Une balise de composant écrite par la personne n'est pas touchée.
+  expect(nettoyerDemande('ajoute <bureau-sidebar> au menu')).toBe('ajoute <bureau-sidebar> au menu')
+})
+
+test('les entrées déjà notées avec des balises sont nettoyées, les vides écartées', async () => {
+  const sale = { heure: '15:51', depot: 'demo', demande: '<ide_opened_file>X</ide_opened_file> réorganiser', reponse: '' }
+  const vide = { heure: '13:29', depot: 'demo', demande: '<task-notification> <task-id>a1</task-id>', reponse: '' }
+
+  expect(lireEntrees([sale, vide])).toEqual([{ ...sale, demande: 'réorganiser' }])
+})
+
+test("l'heure réglée est relue dans les réglages, sans redémarrer", async () => {
+  const reglages = JSON.stringify({
+    pluginConfigs: { 'rapport-jour@mods-perso': { options: { heure: '16:45' } }, 'autre@x': { options: { heure: '09:00' } } },
+  })
+
+  expect(heureDesReglages(reglages)).toBe('16:45')
+  expect(heureDesReglages(JSON.stringify({ pluginConfigs: { 'rapport-jour@m': { options: { heure: 'midi' } } } }))).toBe(undefined)
+  expect(heureDesReglages('{}')).toBe(undefined)
+  expect(heureDesReglages('pas du json')).toBe(undefined)
+})
+
+test('signale les mots de la commande qui ne veulent rien dire', async () => {
+  expect(motsInconnus('mail')).toEqual([])
+  expect(motsInconnus(' main ')).toEqual(['main'])
+  expect(motsInconnus('')).toEqual([])
+})
+
 test('le rapport brut liste les demandes dans l\'ordre des heures', async () => {
   const brut = rapportBrut([
     { heure: '14:00', depot: 'b', demande: 'seconde', reponse: '' },
@@ -124,6 +165,10 @@ test('sans rédaction, le rapport range les demandes par projet', async () => {
   expect(rapport.projets.map(projet => projet.nom)).toEqual(['facturation', 'portail'])
   expect(rapport.projets[0]?.faits).toEqual(['09:00 — ajouter un export', '10:30 — tester'])
   expect(rapportDepuisJournal([]).resume).toBe('Rien de noté ce jour-là.')
+  // La raison de l'échec de rédaction est dite.
+  expect(rapportDepuisJournal(ENTREES, 'réponse coupée').resume).toBe(
+    'Rapport non rédigé (réponse coupée) : voici les demandes de la journée.',
+  )
 })
 
 test('les chiffres clés viennent du journal', async () => {
